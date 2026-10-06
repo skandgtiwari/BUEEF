@@ -1,0 +1,1 @@
+"""Occupancy reading model placeholder."""
