@@ -4,3 +4,6 @@ __pycache__/
 .venv/
 venv/
 .ipynb_checkpoints/
+.vscode/
+.DS_Store
+**/__pycache__/
