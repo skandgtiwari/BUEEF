@@ -2,7 +2,6 @@ CREATE DATABASE IF NOT EXISTS bueef;
 
 USE bueef;
 
-
 -- 1. BUILDINGS
 CREATE TABLE buildings (
     building_id INT PRIMARY KEY AUTO_INCREMENT,
