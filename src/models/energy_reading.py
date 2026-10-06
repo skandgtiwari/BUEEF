@@ -1,0 +1,1 @@
+"""Energy reading model placeholder."""
