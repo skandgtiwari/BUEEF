@@ -1,0 +1,1 @@
+"""Configuration placeholders for BUEEF."""
