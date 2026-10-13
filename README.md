@@ -67,4 +67,4 @@ Weekly figures from the 7-day simulation:
 
 ## Author
 
-[Your Name]
+Skand Gokarmo Tiwari
