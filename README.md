@@ -1,6 +1,51 @@
 # BUEEF — Building Utility & Energy Efficiency Fine-Tuner
 
+## Live Demo
+
+Live demo: https://bueef.onrender.com
+
+Note: hosted on Render's free tier — the first load may take ~30 seconds while the service wakes up.
+
 *A Python-based energy analytics and optimisation tool that simulates a 14-zone school building, analyses its energy use, predicts hourly consumption, compares energy-saving scenarios, and displays results on a Flask dashboard.*
+
+## Screenshots
+
+### Dashboard overview
+
+The dashboard presents weekly energy, estimated cost and emissions, zone-level consumption, and the daily energy profile.
+
+![BUEEF dashboard overview](docs/screenshots/dashboard.png)
+
+### Interactive optimisation simulator
+
+Toggle policies and adjust their intensity to see updated energy, cost, and emissions savings in the dashboard.
+
+![BUEEF interactive optimisation simulator](docs/screenshots/simulator.png)
+
+## How the Project Works
+
+BUEEF models a school building as 14 zones distributed across three floors. It generates seven days of half-hourly readings—4,704 rows in total—and stores each zone's energy use, occupancy, and timestamp in SQLite. The data is simulated, with weekday schedules and small per-reading variation, so the project demonstrates an end-to-end analytics workflow without requiring physical meters.
+
+The scripts and dashboard each serve a separate stage:
+
+1. `generator.py` creates or refreshes the `zones` and `readings` tables with the synthetic week of data.
+2. `validate.py` checks that the generated dataset has the expected coverage, valid values, continuous timestamps, unique readings, and intact zone references.
+3. `analysis.py` uses SQL aggregations to report energy by zone, floor, and hour, estimate cost and emissions, and identify energy used when occupancy is zero.
+4. `predict.py` compares a zone-and-hour average baseline with regression and Random Forest models. It trains on the first six days, tests on day seven, and flags unusually large prediction errors.
+5. `optimize.py` estimates the effect of motion-sensor lighting, server-room night setback, and lab equipment shutdown. Its comfort check ensures the motion-sensor and lab rules do not alter occupied readings.
+6. `app.py` serves a read-only dashboard and readings endpoint. The browser applies the selected policies locally, then updates the charts and savings figures without reloading or writing to the database.
+
+## Interactive Demonstration
+
+Open the [live dashboard](https://bueef.onrender.com) or start it locally with `python app.py`, then:
+
+1. Review the baseline KPI cards and energy charts.
+2. In the simulator, clear all policies to compare against baseline.
+3. Enable individual policies or combine them; use the motion-sensor and lab sliders to change their reduction intensity.
+4. Observe total optimised energy, savings, cost, emissions, and charts update immediately.
+5. Select **Reset defaults** to restore all policies and their default intensities.
+
+All simulator changes are temporary browser-side estimates. They do not change the SQLite dataset or control real building equipment.
 
 ## Problem
 
@@ -15,6 +60,7 @@ Schools waste significant electricity in empty rooms, after-hours, and via alway
 - Anomaly detection — flags readings exceeding 2 standard deviations of training residuals
 - Optimisation — three scenarios (motion sensors, server setback, lab shutdown) with an enforced comfort constraint
 - Dashboard — Flask app with KPI cards, zone bar chart, hourly line chart, and optimisation table
+- Interactive dashboard — users can toggle optimisation rules on/off and adjust intensity sliders to see live savings estimates
 
 ## Tech Stack
 
@@ -32,6 +78,8 @@ python optimize.py      # simulate energy-saving scenarios
 python app.py           # launch dashboard at http://localhost:5000
 ```
 
+The dashboard is also deployed live at https://bueef.onrender.com
+
 ## Project Structure
 
 ```text
@@ -42,8 +90,14 @@ BUEEF/
 ├── predict.py         # ML prediction + anomaly detection
 ├── optimize.py        # optimisation scenarios
 ├── app.py             # Flask web app
-├── templates/         # HTML for dashboard
-├── static/            # CSS for dashboard
+├── procfile           # Render deployment start command
+├── templates/
+│   └── dashboard.html # dashboard HTML + Chart.js + simulator JS
+├── static/
+│   └── style.css      # dashboard styling
+├── docs/
+│   └── screenshots/   # dashboard and simulator screenshots
+├── bueef.db           # generated SQLite dataset
 ├── requirements.txt
 └── README.md
 ```
