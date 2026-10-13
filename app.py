@@ -1,8 +1,3 @@
-import os
-if not os.path.exists("bueef.db"):
-    import generator
-    generator.main()
-
 import sqlite3
 from pathlib import Path
 

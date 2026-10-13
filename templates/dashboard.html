@@ -10,13 +10,26 @@
 <body>
     <main class="page">
         <header class="page-header">
-            <p class="eyebrow">School Building Energy Analytics</p>
-            <h1>BUEEF Dashboard</h1>
-            <p class="subtitle">Weekly energy use, emissions, and optimization potential</p>
+            <div class="header-copy">
+                <p class="eyebrow">School Building Energy Analytics</p>
+                <h1>BUEEF <span>Energy intelligence</span></h1>
+                <p class="subtitle">Weekly performance, emissions, and practical savings potential</p>
+            </div>
+            <div class="header-status">
+                <span class="live-indicator"></span>
+                <span>Simulation ready</span>
+            </div>
         </header>
 
+        <nav class="dashboard-nav" aria-label="Dashboard sections">
+            <a class="nav-link is-active" href="#overview">Overview</a>
+            <a class="nav-link" href="#energy">Energy profile</a>
+            <a class="nav-link" href="#simulator">Simulator</a>
+            <a class="nav-link" href="#policy">Policy summary</a>
+        </nav>
+
         <!-- These KPI cards summarize actual baseline energy use and emissions. -->
-        <section class="kpi-grid" aria-label="Baseline key performance indicators">
+        <section id="overview" class="kpi-grid" aria-label="Baseline key performance indicators">
             <article class="card kpi-card">
                 <p>Total energy</p>
                 <strong>{{ "%.2f"|format(data.summary.total_kwh) }} <span>kWh</span></strong>
@@ -36,7 +49,7 @@
         </section>
 
         <!-- Chart.js shows baseline energy by zone and hour; the simulator updates them in place. -->
-        <section class="card chart-card">
+        <section id="energy" class="card chart-card">
             <div class="section-heading">
                 <div>
                     <p class="eyebrow">Where energy goes</p>
@@ -63,7 +76,7 @@
         </section>
 
         <!-- Rule switches and intensity sliders control a browser-only simulation. -->
-        <section class="card simulator-card">
+        <section id="simulator" class="card simulator-card">
             <div class="section-heading">
                 <div>
                     <p class="eyebrow">What-if analysis</p>
@@ -78,6 +91,10 @@
 
             <div class="simulator-controls">
                 <div class="control-list">
+                    <div class="control-list-heading">
+                        <span>Energy policies</span>
+                        <span><b id="active-policy-count">3</b> active</span>
+                    </div>
                     <label class="toggle-row" for="motion-toggle">
                         <span>Motion-sensor lighting</span>
                         <span class="switch">
@@ -102,6 +119,10 @@
                 </div>
 
                 <div class="slider-list">
+                    <div class="control-list-heading">
+                        <span>Policy intensity</span>
+                        <span>Adjust live</span>
+                    </div>
                     <div class="slider-control">
                         <label for="motion-intensity">
                             <span>Motion sensor intensity</span>
@@ -118,6 +139,13 @@
                         <input id="lab-intensity" type="range" min="0" max="90" value="70">
                         <small>Reduction in energy for empty labs</small>
                     </div>
+                </div>
+            </div>
+            <div class="simulator-actions">
+                <span class="simulator-hint">Changes are calculated locally in your browser.</span>
+                <div class="action-buttons">
+                    <button id="clear-policies" class="button button-subtle" type="button">Clear all</button>
+                    <button id="reset-policies" class="button button-primary" type="button">Reset defaults</button>
                 </div>
             </div>
 
@@ -152,7 +180,7 @@
         </section>
 
         <!-- This table mirrors the live combined-policy savings. -->
-        <section class="card table-card">
+        <section id="policy" class="card table-card">
             <div class="section-heading">
                 <div>
                     <p class="eyebrow">Efficiency opportunity</p>
@@ -187,29 +215,50 @@
     <!-- Inject server-computed baseline data safely for charts and initial values. -->
     <script>
         const initialData = {{ data | tojson }};
-        const chartText = "#aab7c8";
-        const chartGrid = "rgba(170, 183, 200, 0.12)";
+        const chartText = "#777777";
+        const chartGrid = "rgba(190, 184, 173, 0.4)";
 
         // Create each chart once; recompute() only replaces dataset values.
         const zoneChart = new Chart(document.getElementById("zone-chart"), {
             type: "bar",
             data: {
                 labels: initialData.energy_per_zone.map((item) => item.name),
-                datasets: [{
-                    label: "Energy (kWh)",
-                    data: initialData.energy_per_zone.map((item) => item.kwh),
-                    backgroundColor: "#56c8a2",
-                    borderRadius: 5
-                }]
+                datasets: [
+                    {
+                        label: "Baseline",
+                        data: initialData.energy_per_zone.map((item) => item.kwh),
+                        backgroundColor: "#333333",
+                        borderRadius: 0
+                    },
+                    {
+                        label: "Optimised",
+                        data: initialData.energy_per_zone.map((item) => item.kwh),
+                        backgroundColor: "#333333",
+                        borderRadius: 0
+                    }
+                ]
             },
             options: {
                 indexAxis: "y",
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: {
+                        position: "top",
+                        align: "end",
+                        display: false
+                    }
+                },
                 scales: {
-                    x: { beginAtZero: true, grid: { color: chartGrid }, ticks: { color: chartText } },
-                    y: { grid: { display: false }, ticks: { color: chartText } }
+                    x: {
+                        beginAtZero: true,
+                        grid: { display: false },
+                        ticks: { color: chartText, font: { size: 11 } }
+                    },
+                    y: {
+                        grid: { color: chartGrid },
+                        ticks: { color: chartText, font: { size: 11 } }
+                    }
                 }
             }
         });
@@ -220,23 +269,50 @@
                 labels: initialData.energy_by_hour.map(
                     (item) => `${String(item.hour).padStart(2, "0")}:00`
                 ),
-                datasets: [{
-                    label: "Energy (kWh)",
-                    data: initialData.energy_by_hour.map((item) => item.kwh),
-                    borderColor: "#79a9ff",
-                    backgroundColor: "rgba(121, 169, 255, 0.14)",
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 3
-                }]
+                datasets: [
+                    {
+                        label: "Baseline",
+                        data: initialData.energy_by_hour.map((item) => item.kwh),
+                        borderColor: "#111111",
+                        backgroundColor: "transparent",
+                        fill: false,
+                        tension: 0.3,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: "#111111",
+                        borderDash: [5, 5]
+                    },
+                    {
+                        label: "Optimised",
+                        data: initialData.energy_by_hour.map((item) => item.kwh),
+                        borderColor: "#111111",
+                        backgroundColor: "rgba(51, 51, 51, 0.1)",
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: "#111111"
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
                 scales: {
-                    x: { grid: { color: chartGrid }, ticks: { color: chartText } },
-                    y: { beginAtZero: true, grid: { color: chartGrid }, ticks: { color: chartText } }
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: chartText, font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: chartGrid },
+                        ticks: { color: chartText, font: { size: 11 } }
+                    }
                 }
             }
         });
@@ -331,12 +407,25 @@
             setNumber("table-cost", costSaved);
             setNumber("table-co2", co2Avoided);
 
-            zoneChart.data.datasets[0].data = zoneChart.data.labels.map(
+            zoneChart.data.datasets[1].data = zoneChart.data.labels.map(
                 (name) => zoneTotals.get(name) || 0
             );
-            hourChart.data.datasets[0].data = hourTotals;
+            hourChart.data.datasets[1].data = hourTotals;
             zoneChart.update();
             hourChart.update();
+            document.getElementById("active-policy-count").textContent = [
+                motionToggle,
+                serverToggle,
+                labToggle
+            ].filter((toggle) => toggle.checked).length;
+        }
+
+        function setPolicyState(enabled) {
+            for (const toggle of [motionToggle, serverToggle, labToggle]) {
+                toggle.checked = enabled;
+            }
+            updateSliderControls();
+            recompute();
         }
 
         // Sliders are available only while their related rule is enabled.
@@ -356,6 +445,32 @@
                 recompute();
             });
         }
+
+        document.getElementById("clear-policies").addEventListener("click", () => {
+            setPolicyState(false);
+        });
+        document.getElementById("reset-policies").addEventListener("click", () => {
+            motionIntensity.value = "40";
+            labIntensity.value = "70";
+            setPolicyState(true);
+        });
+
+        // Keep the section indicator synchronized as users scroll through the report.
+        const dashboardSections = [...document.querySelectorAll("main section[id]")];
+        const sectionObserver = new IntersectionObserver((entries) => {
+            const visible = entries
+                .filter((entry) => entry.isIntersecting)
+                .sort((first, second) => second.intersectionRatio - first.intersectionRatio)[0];
+            if (visible) {
+                document.querySelectorAll(".nav-link").forEach((link) => {
+                    link.classList.toggle(
+                        "is-active",
+                        link.getAttribute("href") === `#${visible.target.id}`
+                    );
+                });
+            }
+        }, { rootMargin: "-20% 0px -65% 0px", threshold: [0, 0.25, 0.5] });
+        dashboardSections.forEach((section) => sectionObserver.observe(section));
 
         updateSliderControls();
         fetch("/api/readings")
