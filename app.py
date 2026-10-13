@@ -13,6 +13,11 @@ from optimize import (
 
 app = Flask(__name__)
 DATABASE = Path(__file__).resolve().with_name("bueef.db")
+# Fresh deployments have no persisted database, so generate the initial dataset.
+if not DATABASE.exists():
+    import generator
+    generator.main()
+
 COMBINED_RULES = ("motion_sensor", "server_setback", "lab_shutdown")
 
 

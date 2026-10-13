@@ -2,6 +2,7 @@
 import random
 import sqlite3
 from datetime import datetime, timedelta
+from pathlib import Path
 
 
 DAYS_TO_GENERATE = 7
@@ -32,7 +33,7 @@ BASE_LOAD = {
     "server": 1500,
 }
 
-DATABASE = "bueef.db"
+DATABASE = Path(__file__).resolve().with_name("bueef.db")
 START = datetime(2026, 1, 15, 0, 0, 0)
 
 
