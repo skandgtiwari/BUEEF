@@ -1,6 +1,9 @@
+# 7-day dataset (14 zones × 48 slots × 7 days = 4704 readings)
 import sqlite3
 from datetime import datetime, timedelta
 
+
+DAYS_TO_GENERATE = 7
 
 ZONES = [
     {"id": 1, "name": "Classroom 101", "floor": 1, "type": "classroom", "capacity": 30},
@@ -83,20 +86,24 @@ def main():
         )
 
         readings = []
-        for zone in ZONES:
-            for interval in range(48):
-                timestamp = START + timedelta(minutes=30 * interval)
-                occupancy = occupancy_for(zone["type"], timestamp)
-                watts = BASE_LOAD[zone["type"]] * (0.3 + 0.7 * occupancy)
-                energy_kwh = round(watts * 0.5 / 1000, 4)
-                readings.append(
-                    (
-                        zone["id"],
-                        timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                        energy_kwh,
-                        occupancy,
+        for day in range(DAYS_TO_GENERATE):
+            for zone in ZONES:
+                for interval in range(48):
+                    timestamp = START + timedelta(
+                        days=day,
+                        minutes=30 * interval,
                     )
-                )
+                    occupancy = occupancy_for(zone["type"], timestamp)
+                    watts = BASE_LOAD[zone["type"]] * (0.3 + 0.7 * occupancy)
+                    energy_kwh = round(watts * 0.5 / 1000, 4)
+                    readings.append(
+                        (
+                            zone["id"],
+                            timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                            energy_kwh,
+                            occupancy,
+                        )
+                    )
 
         connection.executemany(
             """

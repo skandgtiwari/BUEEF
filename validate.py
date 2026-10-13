@@ -1,10 +1,11 @@
+# 7-day dataset (14 zones × 48 slots × 7 days = 4704 readings)
 import sqlite3
 import sys
 
 
 DATABASE = "bueef.db"
-EXPECTED_READING_COUNT = 672
-READINGS_PER_ZONE = 48
+EXPECTED_READING_COUNT = 14 * 48 * 7
+READINGS_PER_ZONE = 48 * 7
 
 
 def check_row_count(connection):
@@ -97,13 +98,21 @@ def check_timestamp_continuity(connection):
         SELECT id, zone_id, previous_timestamp, timestamp
         FROM ordered_readings
         WHERE timestamp IS NULL
+           OR datetime(timestamp) IS NULL
            OR (
                 previous_timestamp IS NOT NULL
                 AND (
                     datetime(previous_timestamp, '+30 minutes') IS NULL
-                    OR datetime(timestamp) IS NULL
                     OR datetime(timestamp) !=
                        datetime(previous_timestamp, '+30 minutes')
+                    OR (
+                        date(timestamp) != date(previous_timestamp)
+                        AND (
+                            date(timestamp) != date(previous_timestamp, '+1 day')
+                            OR time(previous_timestamp) != '23:30:00'
+                            OR time(timestamp) != '00:00:00'
+                        )
+                    )
                 )
            )
         ORDER BY zone_id, timestamp, id
@@ -149,6 +158,7 @@ def check_foreign_keys(connection):
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")
     failures = []
     checks = (
         check_row_count,
