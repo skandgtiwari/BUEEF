@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BUEEF | Energy Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <main class="page">
+        <header class="page-header">
+            <p class="eyebrow">School Building Energy Analytics</p>
+            <h1>BUEEF Dashboard</h1>
+            <p class="subtitle">Weekly energy use, emissions, and optimization potential</p>
+        </header>
+
+        <!-- KPI cards summarize consumption, cost, emissions, and savings. -->
+        <section class="kpi-grid" aria-label="Key performance indicators">
+            <article class="card kpi-card">
+                <p>Total energy</p>
+                <strong>{{ "%.2f"|format(data.summary.total_kwh) }} <span>kWh</span></strong>
+            </article>
+            <article class="card kpi-card">
+                <p>Total cost</p>
+                <strong>₹{{ "%.2f"|format(data.summary.total_cost) }}</strong>
+            </article>
+            <article class="card kpi-card">
+                <p>Total CO₂</p>
+                <strong>{{ "%.2f"|format(data.summary.total_co2_kg) }} <span>kg</span></strong>
+            </article>
+            <article class="card kpi-card highlight">
+                <p>Combined savings</p>
+                <strong>{{ "%.2f"|format(data.savings.savings_percent) }}<span>%</span></strong>
+            </article>
+        </section>
+
+        <!-- Chart.js visualizes energy totals by zone. -->
+        <section class="card chart-card">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Where energy goes</p>
+                    <h2>Energy per zone</h2>
+                </div>
+                <span class="unit">kWh / week</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="zone-chart" aria-label="Bar chart of weekly energy per zone"></canvas>
+            </div>
+        </section>
+
+        <!-- The hourly line chart makes daytime and overnight patterns visible. -->
+        <section class="card chart-card">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Daily profile</p>
+                    <h2>Energy by hour</h2>
+                </div>
+                <span class="unit">kWh / hour</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="hour-chart" aria-label="Line chart of energy by hour"></canvas>
+            </div>
+        </section>
+
+        <!-- This table compares actual weekly energy with the combined policy. -->
+        <section class="card table-card">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Efficiency opportunity</p>
+                    <h2>Combined optimization</h2>
+                </div>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Baseline</th>
+                            <th>Optimized</th>
+                            <th>Energy saved</th>
+                            <th>Cost saved</th>
+                            <th>CO₂ avoided</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ "%.2f"|format(data.savings.baseline_kwh) }} kWh</td>
+                            <td>{{ "%.2f"|format(data.savings.optimized_kwh) }} kWh</td>
+                            <td>{{ "%.2f"|format(data.savings.savings_kwh) }} kWh</td>
+                            <td>₹{{ "%.2f"|format(data.savings.cost_saved) }}</td>
+                            <td>{{ "%.2f"|format(data.savings.co2_avoided_kg) }} kg</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Inject query results as JSON for the charts; tojson safely escapes values. -->
+    <script>
+        const energyPerZone = {{ data.energy_per_zone | tojson }};
+        const energyByHour = {{ data.energy_by_hour | tojson }};
+        const chartText = "#aab7c8";
+        const chartGrid = "rgba(170, 183, 200, 0.12)";
+
+        new Chart(document.getElementById("zone-chart"), {
+            type: "bar",
+            data: {
+                labels: energyPerZone.map((item) => item.name),
+                datasets: [{
+                    label: "Energy (kWh)",
+                    data: energyPerZone.map((item) => item.kwh),
+                    backgroundColor: "#56c8a2",
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: "y",
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, grid: { color: chartGrid }, ticks: { color: chartText } },
+                    y: { grid: { display: false }, ticks: { color: chartText } }
+                }
+            }
+        });
+
+        new Chart(document.getElementById("hour-chart"), {
+            type: "line",
+            data: {
+                labels: energyByHour.map((item) => `${String(item.hour).padStart(2, "0")}:00`),
+                datasets: [{
+                    label: "Energy (kWh)",
+                    data: energyByHour.map((item) => item.kwh),
+                    borderColor: "#79a9ff",
+                    backgroundColor: "rgba(121, 169, 255, 0.14)",
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: chartGrid }, ticks: { color: chartText } },
+                    y: { beginAtZero: true, grid: { color: chartGrid }, ticks: { color: chartText } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

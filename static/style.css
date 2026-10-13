@@ -1,0 +1,193 @@
+/* Global dark theme and readable page defaults. */
+:root {
+    color-scheme: dark;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #0c1220;
+    color: #edf2f8;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    background:
+        radial-gradient(ellipse at 10% 0%, rgba(50, 89, 143, 0.2), transparent 38rem),
+        #0c1220;
+}
+
+.page {
+    width: min(1180px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 48px 0 64px;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.eyebrow {
+    margin: 0 0 8px;
+    color: #7dd8b8;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+    margin-top: 0;
+}
+
+h1 {
+    margin-bottom: 8px;
+    font-size: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -0.04em;
+}
+
+.subtitle {
+    margin-bottom: 0;
+    color: #9aa9bd;
+}
+
+/* KPI cards use a responsive grid that collapses on narrow screens. */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.card {
+    border: 1px solid #253249;
+    border-radius: 14px;
+    background: rgba(20, 29, 45, 0.92);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.kpi-card {
+    min-height: 124px;
+    padding: 20px;
+}
+
+.kpi-card p {
+    margin-bottom: 16px;
+    color: #9aa9bd;
+    font-size: 0.88rem;
+}
+
+.kpi-card strong {
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+    letter-spacing: -0.03em;
+}
+
+.kpi-card strong span {
+    color: #9aa9bd;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.highlight {
+    border-color: rgba(86, 200, 162, 0.5);
+    background: linear-gradient(145deg, rgba(32, 73, 68, 0.65), #141d2d 75%);
+}
+
+/* Charts and table share consistent section spacing. */
+.chart-card,
+.table-card {
+    margin-bottom: 20px;
+    padding: 24px;
+}
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.section-heading .eyebrow {
+    margin-bottom: 5px;
+}
+
+h2 {
+    margin-bottom: 0;
+    font-size: 1.2rem;
+}
+
+.unit {
+    color: #9aa9bd;
+    font-size: 0.82rem;
+}
+
+.chart-container {
+    position: relative;
+    height: 340px;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+th,
+td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #253249;
+    white-space: nowrap;
+}
+
+th {
+    color: #9aa9bd;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+td {
+    color: #edf2f8;
+}
+
+@media (max-width: 800px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 520px) {
+    .page {
+        width: min(100% - 24px, 1180px);
+        padding-top: 32px;
+    }
+
+    .kpi-grid {
+        gap: 10px;
+    }
+
+    .kpi-card {
+        min-height: 110px;
+        padding: 15px;
+    }
+
+    .chart-card,
+    .table-card {
+        padding: 18px;
+    }
+
+    .chart-container {
+        height: 290px;
+    }
+}
