@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-from flask import Flask, render_template
+from flask import Flask, jsonify, render_template
 
 from optimize import (
     CO2_KG_PER_KWH,
@@ -62,22 +62,57 @@ def dashboard():
             {"hour": hour, "kwh": round(kwh, 2)} for hour, kwh in hour_rows
         ],
         "summary": {
-            "total_kwh": round(total_kwh, 2),
-            "total_cost": round(total_kwh * RATE_PER_KWH, 2),
-            "total_co2_kg": round(total_kwh * CO2_KG_PER_KWH, 2),
+            "total_kwh": total_kwh,
+            "total_cost": total_kwh * RATE_PER_KWH,
+            "total_co2_kg": total_kwh * CO2_KG_PER_KWH,
         },
         "savings": {
-            "baseline_kwh": round(total_kwh, 2),
-            "optimized_kwh": round(optimized_kwh, 2),
-            "savings_kwh": round(savings_kwh, 2),
+            "baseline_kwh": total_kwh,
+            "optimized_kwh": optimized_kwh,
+            "savings_kwh": savings_kwh,
             "savings_percent": (
-                round(savings_kwh / total_kwh * 100, 2) if total_kwh else 0.0
+                savings_kwh / total_kwh * 100 if total_kwh else 0.0
             ),
-            "cost_saved": round(savings_kwh * RATE_PER_KWH, 2),
-            "co2_avoided_kg": round(savings_kwh * CO2_KG_PER_KWH, 2),
+            "cost_saved": savings_kwh * RATE_PER_KWH,
+            "co2_avoided_kg": savings_kwh * CO2_KG_PER_KWH,
         },
     }
     return render_template("dashboard.html", data=data)
+
+
+@app.route("/api/readings")
+def api_readings():
+    # Return the source rows needed by the browser-side optimization simulator.
+    database_uri = f"file:{DATABASE.as_posix()}?mode=ro"
+    with sqlite3.connect(database_uri, uri=True) as connection:
+        rows = connection.execute(
+            """
+            SELECT
+                readings.zone_id,
+                zones.name AS zone_name,
+                zones.type AS zone_type,
+                CAST(substr(readings.timestamp, 12, 2) AS INTEGER) AS hour,
+                readings.energy_kwh,
+                readings.occupancy
+            FROM readings
+            JOIN zones ON zones.id = readings.zone_id
+            ORDER BY readings.timestamp, readings.zone_id
+            """
+        ).fetchall()
+
+    return jsonify(
+        [
+            {
+                "zone_id": zone_id,
+                "zone_name": zone_name,
+                "zone_type": zone_type,
+                "hour": hour,
+                "energy_kwh": energy_kwh,
+                "occupancy": occupancy,
+            }
+            for zone_id, zone_name, zone_type, hour, energy_kwh, occupancy in rows
+        ]
+    )
 
 
 if __name__ == "__main__":

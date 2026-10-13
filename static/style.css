@@ -98,9 +98,10 @@ h1 {
     background: linear-gradient(145deg, rgba(32, 73, 68, 0.65), #141d2d 75%);
 }
 
-/* Charts and table share consistent section spacing. */
+/* Charts, simulator, and table share consistent section spacing. */
 .chart-card,
-.table-card {
+.table-card,
+.simulator-card {
     margin-bottom: 20px;
     padding: 24px;
 }
@@ -161,6 +162,219 @@ td {
     color: #edf2f8;
 }
 
+/* Simulator rule controls retain the same dark palette as the dashboard cards. */
+.comfort-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 11px;
+    border: 1px solid rgba(86, 200, 162, 0.35);
+    border-radius: 999px;
+    background: rgba(48, 135, 104, 0.16);
+    color: #8de0be;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.comfort-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #56c8a2;
+    box-shadow: 0 0 10px rgba(86, 200, 162, 0.65);
+}
+
+.comfort-note,
+.simulator-status {
+    color: #9aa9bd;
+    font-size: 0.88rem;
+}
+
+.comfort-note {
+    margin: -8px 0 22px;
+}
+
+.simulator-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+    gap: 28px;
+    padding: 20px;
+    border: 1px solid #253249;
+    border-radius: 11px;
+    background: rgba(12, 18, 32, 0.48);
+}
+
+.control-list,
+.slider-list {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+}
+
+.toggle-row {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    color: #dce5f1;
+    font-size: 0.92rem;
+    cursor: pointer;
+}
+
+/* The checkbox remains keyboard-operable while the adjacent pill is decorative. */
+.switch {
+    position: relative;
+    display: inline-flex;
+    width: 48px;
+    height: 27px;
+    flex: 0 0 48px;
+    align-items: center;
+}
+
+.switch input {
+    position: absolute;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.switch-track {
+    position: absolute;
+    inset: 0;
+    border: 1px solid #46556c;
+    border-radius: 999px;
+    background: #273349;
+    transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.switch-track::before {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: #dce5f1;
+    content: "";
+    transition: transform 180ms ease, background-color 180ms ease;
+}
+
+.switch input:checked + .switch-track {
+    border-color: #56c8a2;
+    background: #287c67;
+}
+
+.switch input:checked + .switch-track::before {
+    transform: translateX(21px);
+    background: #fff;
+}
+
+.switch input:focus-visible + .switch-track {
+    outline: 2px solid #79a9ff;
+    outline-offset: 3px;
+}
+
+.slider-control {
+    transition: opacity 160ms ease;
+}
+
+.slider-control.is-disabled {
+    opacity: 0.42;
+}
+
+.slider-control label {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 9px;
+    color: #dce5f1;
+    font-size: 0.87rem;
+}
+
+.slider-control output {
+    color: #7dd8b8;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.slider-control input[type="range"] {
+    width: 100%;
+    height: 6px;
+    margin: 7px 0;
+    border-radius: 999px;
+    outline: none;
+    background: #34435b;
+    accent-color: #56c8a2;
+    cursor: pointer;
+}
+
+.slider-control input[type="range"]:focus-visible {
+    outline: 2px solid #79a9ff;
+    outline-offset: 4px;
+}
+
+.slider-control input[type="range"]:disabled {
+    cursor: not-allowed;
+}
+
+.slider-control small {
+    display: block;
+    color: #8493a8;
+    font-size: 0.75rem;
+}
+
+.live-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.live-kpi {
+    display: grid;
+    gap: 8px;
+    min-height: 84px;
+    align-content: center;
+    padding: 14px 16px;
+    border: 1px solid #253249;
+    border-radius: 10px;
+    background: #111a2a;
+}
+
+.live-kpi span {
+    color: #9aa9bd;
+    font-size: 0.78rem;
+}
+
+.live-kpi strong {
+    color: #edf2f8;
+    font-size: 1.12rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.live-kpi strong span {
+    color: inherit;
+    font-size: inherit;
+}
+
+.simulator-status {
+    min-height: 1.2em;
+    margin: 15px 0 0;
+}
+
+.simulator-status.is-ready {
+    color: #8de0be;
+}
+
+.simulator-status.is-error {
+    color: #ff9f9f;
+}
+
 @media (max-width: 800px) {
     .kpi-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -183,11 +397,32 @@ td {
     }
 
     .chart-card,
-    .table-card {
+    .table-card,
+    .simulator-card {
         padding: 18px;
     }
 
     .chart-container {
         height: 290px;
+    }
+
+    .section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .simulator-controls {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 15px;
+    }
+
+    .live-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .comfort-badge {
+        white-space: normal;
     }
 }

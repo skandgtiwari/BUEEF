@@ -15,8 +15,8 @@
             <p class="subtitle">Weekly energy use, emissions, and optimization potential</p>
         </header>
 
-        <!-- KPI cards summarize consumption, cost, emissions, and savings. -->
-        <section class="kpi-grid" aria-label="Key performance indicators">
+        <!-- These KPI cards summarize actual baseline energy use and emissions. -->
+        <section class="kpi-grid" aria-label="Baseline key performance indicators">
             <article class="card kpi-card">
                 <p>Total energy</p>
                 <strong>{{ "%.2f"|format(data.summary.total_kwh) }} <span>kWh</span></strong>
@@ -31,11 +31,11 @@
             </article>
             <article class="card kpi-card highlight">
                 <p>Combined savings</p>
-                <strong>{{ "%.2f"|format(data.savings.savings_percent) }}<span>%</span></strong>
+                <strong><span id="headline-savings">{{ "%.2f"|format(data.savings.savings_percent) }}</span><span>%</span></strong>
             </article>
         </section>
 
-        <!-- Chart.js visualizes energy totals by zone. -->
+        <!-- Chart.js shows baseline energy by zone and hour; the simulator updates them in place. -->
         <section class="card chart-card">
             <div class="section-heading">
                 <div>
@@ -49,12 +49,11 @@
             </div>
         </section>
 
-        <!-- The hourly line chart makes daytime and overnight patterns visible. -->
         <section class="card chart-card">
             <div class="section-heading">
                 <div>
                     <p class="eyebrow">Daily profile</p>
-                    <h2>Energy by hour</h2>
+                    <h2>Energy by hour of day</h2>
                 </div>
                 <span class="unit">kWh / hour</span>
             </div>
@@ -63,12 +62,101 @@
             </div>
         </section>
 
-        <!-- This table compares actual weekly energy with the combined policy. -->
+        <!-- Rule switches and intensity sliders control a browser-only simulation. -->
+        <section class="card simulator-card">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">What-if analysis</p>
+                    <h2>Interactive Optimisation Simulator</h2>
+                </div>
+                <div class="comfort-badge" role="status">
+                    <span class="comfort-dot"></span>
+                    Comfort constraint: active
+                </div>
+            </div>
+            <p class="comfort-note">Only unoccupied readings are modified.</p>
+
+            <div class="simulator-controls">
+                <div class="control-list">
+                    <label class="toggle-row" for="motion-toggle">
+                        <span>Motion-sensor lighting</span>
+                        <span class="switch">
+                            <input id="motion-toggle" type="checkbox" checked>
+                            <span class="switch-track" aria-hidden="true"></span>
+                        </span>
+                    </label>
+                    <label class="toggle-row" for="server-toggle">
+                        <span>Server Room night setback</span>
+                        <span class="switch">
+                            <input id="server-toggle" type="checkbox" checked>
+                            <span class="switch-track" aria-hidden="true"></span>
+                        </span>
+                    </label>
+                    <label class="toggle-row" for="lab-toggle">
+                        <span>Lab equipment auto-shutdown</span>
+                        <span class="switch">
+                            <input id="lab-toggle" type="checkbox" checked>
+                            <span class="switch-track" aria-hidden="true"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="slider-list">
+                    <div class="slider-control">
+                        <label for="motion-intensity">
+                            <span>Motion sensor intensity</span>
+                            <output id="motion-value" for="motion-intensity">40%</output>
+                        </label>
+                        <input id="motion-intensity" type="range" min="0" max="60" value="40">
+                        <small>Reduction in energy for empty rooms</small>
+                    </div>
+                    <div class="slider-control">
+                        <label for="lab-intensity">
+                            <span>Lab shutdown intensity</span>
+                            <output id="lab-value" for="lab-intensity">70%</output>
+                        </label>
+                        <input id="lab-intensity" type="range" min="0" max="90" value="70">
+                        <small>Reduction in energy for empty labs</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live KPI cards recalculate locally whenever a control changes. -->
+            <div class="live-kpi-grid" aria-live="polite" aria-label="Live optimization results">
+                <article class="live-kpi">
+                    <span>Total baseline</span>
+                    <strong><span id="live-baseline">{{ "%.2f"|format(data.savings.baseline_kwh) }}</span> kWh</strong>
+                </article>
+                <article class="live-kpi">
+                    <span>Total optimised</span>
+                    <strong><span id="live-optimized">{{ "%.2f"|format(data.savings.optimized_kwh) }}</span> kWh</strong>
+                </article>
+                <article class="live-kpi">
+                    <span>Energy saved</span>
+                    <strong><span id="live-saved">{{ "%.2f"|format(data.savings.savings_kwh) }}</span> kWh</strong>
+                </article>
+                <article class="live-kpi">
+                    <span>Reduction</span>
+                    <strong><span id="live-percent">{{ "%.2f"|format(data.savings.savings_percent) }}</span>%</strong>
+                </article>
+                <article class="live-kpi">
+                    <span>Cost saved</span>
+                    <strong>₹<span id="live-cost">{{ "%.2f"|format(data.savings.cost_saved) }}</span></strong>
+                </article>
+                <article class="live-kpi">
+                    <span>CO₂ avoided</span>
+                    <strong><span id="live-co2">{{ "%.2f"|format(data.savings.co2_avoided_kg) }}</span> kg</strong>
+                </article>
+            </div>
+            <p id="simulator-status" class="simulator-status" role="status">Loading readings for the simulator…</p>
+        </section>
+
+        <!-- This table mirrors the live combined-policy savings. -->
         <section class="card table-card">
             <div class="section-heading">
                 <div>
                     <p class="eyebrow">Efficiency opportunity</p>
-                    <h2>Combined optimization</h2>
+                    <h2>Optimisation summary</h2>
                 </div>
             </div>
             <div class="table-scroll">
@@ -84,11 +172,11 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>{{ "%.2f"|format(data.savings.baseline_kwh) }} kWh</td>
-                            <td>{{ "%.2f"|format(data.savings.optimized_kwh) }} kWh</td>
-                            <td>{{ "%.2f"|format(data.savings.savings_kwh) }} kWh</td>
-                            <td>₹{{ "%.2f"|format(data.savings.cost_saved) }}</td>
-                            <td>{{ "%.2f"|format(data.savings.co2_avoided_kg) }} kg</td>
+                            <td><span id="table-baseline">{{ "%.2f"|format(data.savings.baseline_kwh) }}</span> kWh</td>
+                            <td><span id="table-optimized">{{ "%.2f"|format(data.savings.optimized_kwh) }}</span> kWh</td>
+                            <td><span id="table-saved">{{ "%.2f"|format(data.savings.savings_kwh) }}</span> kWh</td>
+                            <td>₹<span id="table-cost">{{ "%.2f"|format(data.savings.cost_saved) }}</span></td>
+                            <td><span id="table-co2">{{ "%.2f"|format(data.savings.co2_avoided_kg) }}</span> kg</td>
                         </tr>
                     </tbody>
                 </table>
@@ -96,20 +184,20 @@
         </section>
     </main>
 
-    <!-- Inject query results as JSON for the charts; tojson safely escapes values. -->
+    <!-- Inject server-computed baseline data safely for charts and initial values. -->
     <script>
-        const energyPerZone = {{ data.energy_per_zone | tojson }};
-        const energyByHour = {{ data.energy_by_hour | tojson }};
+        const initialData = {{ data | tojson }};
         const chartText = "#aab7c8";
         const chartGrid = "rgba(170, 183, 200, 0.12)";
 
-        new Chart(document.getElementById("zone-chart"), {
+        // Create each chart once; recompute() only replaces dataset values.
+        const zoneChart = new Chart(document.getElementById("zone-chart"), {
             type: "bar",
             data: {
-                labels: energyPerZone.map((item) => item.name),
+                labels: initialData.energy_per_zone.map((item) => item.name),
                 datasets: [{
                     label: "Energy (kWh)",
-                    data: energyPerZone.map((item) => item.kwh),
+                    data: initialData.energy_per_zone.map((item) => item.kwh),
                     backgroundColor: "#56c8a2",
                     borderRadius: 5
                 }]
@@ -126,13 +214,15 @@
             }
         });
 
-        new Chart(document.getElementById("hour-chart"), {
+        const hourChart = new Chart(document.getElementById("hour-chart"), {
             type: "line",
             data: {
-                labels: energyByHour.map((item) => `${String(item.hour).padStart(2, "0")}:00`),
+                labels: initialData.energy_by_hour.map(
+                    (item) => `${String(item.hour).padStart(2, "0")}:00`
+                ),
                 datasets: [{
                     label: "Energy (kWh)",
-                    data: energyByHour.map((item) => item.kwh),
+                    data: initialData.energy_by_hour.map((item) => item.kwh),
                     borderColor: "#79a9ff",
                     backgroundColor: "rgba(121, 169, 255, 0.14)",
                     fill: true,
@@ -150,6 +240,141 @@
                 }
             }
         });
+
+        const motionToggle = document.getElementById("motion-toggle");
+        const serverToggle = document.getElementById("server-toggle");
+        const labToggle = document.getElementById("lab-toggle");
+        const motionIntensity = document.getElementById("motion-intensity");
+        const labIntensity = document.getElementById("lab-intensity");
+        const simulatorStatus = document.getElementById("simulator-status");
+        const numberFormat = new Intl.NumberFormat("en-IN", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
+        let rawReadings = [];
+
+        function setNumber(id, value) {
+            document.getElementById(id).textContent = numberFormat.format(value);
+        }
+
+        function updateSliderControls() {
+            motionIntensity.disabled = !motionToggle.checked;
+            labIntensity.disabled = !labToggle.checked;
+            motionIntensity.closest(".slider-control").classList.toggle(
+                "is-disabled",
+                motionIntensity.disabled
+            );
+            labIntensity.closest(".slider-control").classList.toggle(
+                "is-disabled",
+                labIntensity.disabled
+            );
+            document.getElementById("motion-value").textContent = `${motionIntensity.value}%`;
+            document.getElementById("lab-value").textContent = `${labIntensity.value}%`;
+        }
+
+        // Reapply enabled rules to fresh source values so repeated changes never compound.
+        function recompute() {
+            if (rawReadings.length === 0) {
+                return;
+            }
+
+            const zoneTotals = new Map();
+            const hourTotals = Array(24).fill(0);
+            let optimizedTotal = 0;
+
+            for (const reading of rawReadings) {
+                let energy = reading.energy_kwh;
+                if (motionToggle.checked && reading.occupancy === 0) {
+                    energy *= 1 - Number(motionIntensity.value) / 100;
+                }
+                if (
+                    serverToggle.checked &&
+                    reading.zone_type === "server" &&
+                    (reading.hour >= 22 || reading.hour < 6)
+                ) {
+                    energy *= 0.85;
+                }
+                if (
+                    labToggle.checked &&
+                    reading.zone_type === "lab" &&
+                    reading.occupancy === 0
+                ) {
+                    energy *= 1 - Number(labIntensity.value) / 100;
+                }
+
+                optimizedTotal += energy;
+                zoneTotals.set(
+                    reading.zone_name,
+                    (zoneTotals.get(reading.zone_name) || 0) + energy
+                );
+                hourTotals[reading.hour] += energy;
+            }
+
+            const baseline = initialData.savings.baseline_kwh;
+            const saved = baseline - optimizedTotal;
+            const savedPercent = baseline ? saved / baseline * 100 : 0;
+            const costSaved = saved * 8.50;
+            const co2Avoided = saved * 0.71;
+
+            setNumber("live-baseline", baseline);
+            setNumber("live-optimized", optimizedTotal);
+            setNumber("live-saved", saved);
+            setNumber("live-percent", savedPercent);
+            setNumber("live-cost", costSaved);
+            setNumber("live-co2", co2Avoided);
+            setNumber("headline-savings", savedPercent);
+
+            setNumber("table-baseline", baseline);
+            setNumber("table-optimized", optimizedTotal);
+            setNumber("table-saved", saved);
+            setNumber("table-cost", costSaved);
+            setNumber("table-co2", co2Avoided);
+
+            zoneChart.data.datasets[0].data = zoneChart.data.labels.map(
+                (name) => zoneTotals.get(name) || 0
+            );
+            hourChart.data.datasets[0].data = hourTotals;
+            zoneChart.update();
+            hourChart.update();
+        }
+
+        // Sliders are available only while their related rule is enabled.
+        for (const control of [
+            motionToggle,
+            serverToggle,
+            labToggle,
+            motionIntensity,
+            labIntensity
+        ]) {
+            control.addEventListener("input", () => {
+                updateSliderControls();
+                recompute();
+            });
+            control.addEventListener("change", () => {
+                updateSliderControls();
+                recompute();
+            });
+        }
+
+        updateSliderControls();
+        fetch("/api/readings")
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Readings request failed (${response.status}).`);
+                }
+                return response.json();
+            })
+            .then((readings) => {
+                rawReadings = readings;
+                recompute();
+                simulatorStatus.textContent = `${rawReadings.length.toLocaleString("en-IN")} readings loaded.`;
+                simulatorStatus.classList.add("is-ready");
+            })
+            .catch((error) => {
+                simulatorStatus.textContent = `Simulator unavailable: ${error.message}`;
+                simulatorStatus.classList.add("is-error");
+            });
     </script>
 </body>
 </html>
