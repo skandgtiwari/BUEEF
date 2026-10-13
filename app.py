@@ -1,3 +1,8 @@
+import os
+if not os.path.exists("bueef.db"):
+    import generator
+    generator.main()
+
 import sqlite3
 from pathlib import Path
 
@@ -62,19 +67,19 @@ def dashboard():
             {"hour": hour, "kwh": round(kwh, 2)} for hour, kwh in hour_rows
         ],
         "summary": {
-            "total_kwh": total_kwh,
-            "total_cost": total_kwh * RATE_PER_KWH,
-            "total_co2_kg": total_kwh * CO2_KG_PER_KWH,
+            "total_kwh": round(total_kwh, 2),
+            "total_cost": round(total_kwh * RATE_PER_KWH, 2),
+            "total_co2_kg": round(total_kwh * CO2_KG_PER_KWH, 2),
         },
         "savings": {
-            "baseline_kwh": total_kwh,
-            "optimized_kwh": optimized_kwh,
-            "savings_kwh": savings_kwh,
+            "baseline_kwh": round(total_kwh, 2),
+            "optimized_kwh": round(optimized_kwh, 2),
+            "savings_kwh": round(savings_kwh, 2),
             "savings_percent": (
-                savings_kwh / total_kwh * 100 if total_kwh else 0.0
+                round(savings_kwh / total_kwh * 100, 2) if total_kwh else 0.0
             ),
-            "cost_saved": savings_kwh * RATE_PER_KWH,
-            "co2_avoided_kg": savings_kwh * CO2_KG_PER_KWH,
+            "cost_saved": round(savings_kwh * RATE_PER_KWH, 2),
+            "co2_avoided_kg": round(savings_kwh * CO2_KG_PER_KWH, 2),
         },
     }
     return render_template("dashboard.html", data=data)
