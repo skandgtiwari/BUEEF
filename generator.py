@@ -1,4 +1,5 @@
 # 7-day dataset (14 zones × 48 slots × 7 days = 4704 readings)
+import random
 import sqlite3
 from datetime import datetime, timedelta
 
@@ -49,70 +50,81 @@ def occupancy_for(zone_type, timestamp):
     return 0.0
 
 
+def generate_readings(connection, days):
+    """Replace readings with a seeded-range dataset and return inserted rows."""
+    connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS zones (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            floor INTEGER,
+            type TEXT,
+            capacity INTEGER
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS readings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            zone_id INTEGER,
+            timestamp TEXT,
+            energy_kwh REAL,
+            occupancy REAL,
+            FOREIGN KEY(zone_id) REFERENCES zones(id)
+        )
+        """
+    )
+
+    connection.execute("DELETE FROM readings")
+    connection.execute("DELETE FROM sqlite_sequence WHERE name = 'readings'")
+    connection.executemany(
+        """
+        INSERT OR REPLACE INTO zones (id, name, floor, type, capacity)
+        VALUES (:id, :name, :floor, :type, :capacity)
+        """,
+        ZONES,
+    )
+
+    readings = []
+    for day in range(days):
+        for zone in ZONES:
+            for interval in range(48):
+                timestamp = START + timedelta(
+                    days=day,
+                    minutes=30 * interval,
+                )
+                occupancy = occupancy_for(zone["type"], timestamp)
+                watts = BASE_LOAD[zone["type"]] * (0.3 + 0.7 * occupancy)
+                # Noise makes energy use realistic and prevents trivial ML memorization.
+                energy_kwh = round(
+                    watts * 0.5 / 1000 * random.uniform(0.92, 1.08),
+                    4,
+                )
+                readings.append(
+                    (
+                        zone["id"],
+                        timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                        energy_kwh,
+                        occupancy,
+                    )
+                )
+
+    connection.executemany(
+        """
+        INSERT INTO readings (zone_id, timestamp, energy_kwh, occupancy)
+        VALUES (?, ?, ?, ?)
+        """,
+        readings,
+    )
+    return readings
+
+
 def main():
+    random.seed(42)
     with sqlite3.connect(DATABASE) as connection:
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS zones (
-                id INTEGER PRIMARY KEY,
-                name TEXT,
-                floor INTEGER,
-                type TEXT,
-                capacity INTEGER
-            )
-            """
-        )
-        connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS readings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                zone_id INTEGER,
-                timestamp TEXT,
-                energy_kwh REAL,
-                occupancy REAL,
-                FOREIGN KEY(zone_id) REFERENCES zones(id)
-            )
-            """
-        )
-
-        connection.execute("DELETE FROM readings")
-        connection.executemany(
-            """
-            INSERT OR REPLACE INTO zones (id, name, floor, type, capacity)
-            VALUES (:id, :name, :floor, :type, :capacity)
-            """,
-            ZONES,
-        )
-
-        readings = []
-        for day in range(DAYS_TO_GENERATE):
-            for zone in ZONES:
-                for interval in range(48):
-                    timestamp = START + timedelta(
-                        days=day,
-                        minutes=30 * interval,
-                    )
-                    occupancy = occupancy_for(zone["type"], timestamp)
-                    watts = BASE_LOAD[zone["type"]] * (0.3 + 0.7 * occupancy)
-                    energy_kwh = round(watts * 0.5 / 1000, 4)
-                    readings.append(
-                        (
-                            zone["id"],
-                            timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                            energy_kwh,
-                            occupancy,
-                        )
-                    )
-
-        connection.executemany(
-            """
-            INSERT INTO readings (zone_id, timestamp, energy_kwh, occupancy)
-            VALUES (?, ?, ?, ?)
-            """,
-            readings,
-        )
-
+        readings = generate_readings(connection, DAYS_TO_GENERATE)
         total_energy = connection.execute(
             "SELECT SUM(energy_kwh) FROM readings"
         ).fetchone()[0]

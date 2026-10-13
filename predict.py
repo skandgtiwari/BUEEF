@@ -1,3 +1,4 @@
+import random
 import sqlite3
 from datetime import timedelta
 from pathlib import Path
@@ -7,7 +8,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 
-from generator import BASE_LOAD, START, ZONES, occupancy_for
+from generator import START, ZONES, generate_readings
 
 
 DATABASE = Path(__file__).resolve().with_name("bueef.db")
@@ -38,76 +39,8 @@ INTEGER_FEATURES = [
     "occupancy",
     "zone_type_integer",
 ]
-HALF_HOUR_SLOTS_PER_DAY = 48
 DAYS_TO_GENERATE = 7
 TRAINING_DAYS = 6
-
-
-def regenerate_seven_day_dataset(connection):
-    """Create a fresh week of half-hour readings using generator.py's zones."""
-    connection.execute("PRAGMA foreign_keys = ON")
-    connection.execute(
-        """
-        CREATE TABLE IF NOT EXISTS zones (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            floor INTEGER,
-            type TEXT,
-            capacity INTEGER
-        )
-        """
-    )
-    connection.execute(
-        """
-        CREATE TABLE IF NOT EXISTS readings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            zone_id INTEGER,
-            timestamp TEXT,
-            energy_kwh REAL,
-            occupancy REAL,
-            FOREIGN KEY(zone_id) REFERENCES zones(id)
-        )
-        """
-    )
-
-    # Replace previous readings so each run trains on exactly this generated week.
-    connection.execute("DELETE FROM readings")
-    connection.executemany(
-        """
-        INSERT OR REPLACE INTO zones (id, name, floor, type, capacity)
-        VALUES (:id, :name, :floor, :type, :capacity)
-        """,
-        ZONES,
-    )
-
-    readings = []
-    for day in range(DAYS_TO_GENERATE):
-        for zone in ZONES:
-            for slot in range(HALF_HOUR_SLOTS_PER_DAY):
-                timestamp = START + timedelta(
-                    days=day,
-                    minutes=30 * slot,
-                )
-                occupancy = occupancy_for(zone["type"], timestamp)
-                watts = BASE_LOAD[zone["type"]] * (0.3 + 0.7 * occupancy)
-                energy_kwh = round(watts * 0.5 / 1000, 4)
-                readings.append(
-                    (
-                        zone["id"],
-                        timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                        energy_kwh,
-                        occupancy,
-                    )
-                )
-
-    connection.executemany(
-        """
-        INSERT INTO readings (zone_id, timestamp, energy_kwh, occupancy)
-        VALUES (?, ?, ?, ?)
-        """,
-        readings,
-    )
-    return len(readings)
 
 
 def load_hourly_readings(connection):
@@ -305,7 +238,13 @@ def print_report(result, reading_count):
         )
 
     best_model = min(models, key=lambda item: result[f"{item[1]}_mae"])
-    print(f"Verdict: {best_model[0]} has the lowest MAE.")
+    margin_vs_baseline = (
+        result["baseline_mae"] - result[f"{best_model[1]}_mae"]
+    )
+    print(
+        f"Verdict: {best_model[0]} has the lowest MAE "
+        f"({margin_vs_baseline:.4f} kWh lower than the baseline)."
+    )
 
     print("\nAnomaly detection (Random Forest, test day)")
     print("-" * 72)
@@ -333,13 +272,16 @@ def print_report(result, reading_count):
     print(
         "Baselines are often strong because they use relevant historical "
         "patterns. Linear models cannot easily capture step-function "
-        "occupancy patterns, while tree models such as Random Forest can."
+        "occupancy patterns, while tree models such as Random Forest can. "
+        "The dataset now includes ±8% random variation per reading, which "
+        "prevents trivial memorization and makes model comparison meaningful."
     )
 
 
 def main():
+    random.seed(42)
     with sqlite3.connect(DATABASE) as connection:
-        reading_count = regenerate_seven_day_dataset(connection)
+        reading_count = len(generate_readings(connection, days=7))
         hourly = load_hourly_readings(connection)
 
     result = evaluate_models(hourly)
